@@ -1,0 +1,264 @@
+================================================================================
+API DE SEGURIPAGO v1.1
+Creado por Seguripago, el año 2013
+
+Esta API permite simplificar la conexión entre el comercio y SeguriPago.
+================================================================================
+
+
+
+Se ha implementado tres clases:
+
+- seguripagoEnvio:
+  ----------------
+  Clase para el envíar datos que tiene que cobrar SeguriPago.
+
+- seguripagoRecepcionInmediato:
+  -----------------------------
+  Clase para recibir datos enviados por SeguriPago de manera inmediata.
+  Estos datos puede ser de notificación de pago inmediato: SeguriCrédito o
+  notificación inmediata de notificación de generación de orden de pago para
+  SeguriCash.
+
+- seguripagoRecepcionDiferido:
+  ----------------------------
+  Clase para recibir datos enviados por SeguriPago de manera diferida.
+  Se notifica cuando se recibe un pago diferido, como en BCP o Scotiabank.
+  También es utilizado para enviar la notificación de pago inmediato, cuando ésta
+  falló de la manera inmediata.
+
+- seguripagoPlantillas
+  --------------------
+  Clase para generación de contenido en formato html de las pantallas que se
+  presentan a los usuarios.
+
+
+
+================================================================================
+CLASE PARA ENVÍO DE DATOS
+-------------------------
+Clase: seguripagoEnvio
+Descripción: Clase para el envío de datos del cobro que tiene que realizar
+Seguripago.
+================================================================================
+
+Constructor: seguripagoEnvio($idSocio, $key, $modo)
+---------------------------------------------------
+$idSocio : Identificador del Socio, proporcionado por SeguriPago.
+$key     : Key del Socio, proporcionado por SeguriPago.
+$modo    : Indica si se está en modo 'test' o 'prod'. La clase direcciona
+           automáticamente al servidor de test o servidor de producción de SeguriPago.
+
+Método: enviar(array $data)
+---------------------------
+Este método envía los datos para SeguriPago. Utiliza un formulario html y envío
+automático por medio de POST.
+
+Si se quiere enviar datos de cliente, deberá tener la siguiente estructura
+(se muestran datos de ejemplo):
+$dato_cliente_array = array(
+  512,                   //-- Id del cliente, en el sistema del comercio electrónico
+  "Carlos",              //-- Nombre(s)
+  "Mejía",               //-- Apellido(s)
+  "razon social",        //-- Razón social
+  "DNI",                 //-- Tipo de documento
+  "55556666",            //-- Número de documento
+  "camaringo@gmail.com", //-- Correo
+  "Jr. Parinachocas 111",//-- Dirección
+  "pais",                //-- País del cliente
+  "M"                    //-- Sexo (M)asculino o (F)emenino
+);
+
+Si se quiere enviar datos del artículo, deberá tener la siguiente estructura
+(se muestran datos de ejemplo):
+$dato_articulo_array = array(
+  1,        //-- Número de orden (poner uno: 1).
+  '106701', //-- Código de artículo
+  1,        //-- Cantidad
+  15.50     //-- Precio
+);
+
+El array $data debe tener la siguiente estructura (se muestran datos de ejemplo):
+$data = array(
+  'num_pedido'  => 'XXXXXXXXXXX',        //-- $numero_pedido
+  'fecha_hora'  => time(),               //-- Fecha/Hora de creación en Unixtime
+  'moneda'      => 'PEN',                //-- Moneda (ISO 4217)
+  'importe'     => 15.50,                //-- Importe
+  'vencimiento' => (time() + 72 * 3600), //-- Fecha/Hora de vencimiento en Unixtime
+  'cliente'   => $dato_cliente_array,    //-- Datos de cliente, opcional
+  'articulo'  => $dato_articulo_array,   //-- Datos de artículo, opcional
+  'pantalla'  => 'H',                    //-- Tipo de pantalla a utilizar: (H)orizontal, (V)ertical, opcional
+  'obviar'    => '1',                    //-- Producto de Seguripago que no quiere que aparezca: (1) SeguriCrédito, (2) SeguriCash, opcional.
+);
+
+
+
+
+
+
+
+================================================================================
+CLASE PARA RECEPCION DE DATOS INMEDIATOS
+----------------------------------------
+Clase: seguripagoRecepcionInmediato
+Descripción: Clase para recibir datos enviados por SeguriPago de manera inmediata.
+  Estos datos puede ser de notificación de pago inmediato: SeguriCrédito o
+  notificación inmediata de notificación de generación de orden de pago para
+  SeguriCash.
+================================================================================
+
+Constructor: seguripagoRecepcionInmediato($idSocio, $key, $modo)
+----------------------------------------------------------------
+$idSocio : Identificador del Socio, proporcionado por SeguriPago.
+$key     : Key del Socio, proporcionado por SeguriPago.
+$modo    : Indica si se está en modo 'test' o 'prod'. La clase direcciona
+           automáticamente al servidor de test o servidor produccion de SeguriPago.
+
+
+Método: $data = recibir()
+-------------------------
+Este método recibe los datos enviados por SeguriPago (recibe por el método POST).
+
+$data["idSocio"]              : Identificador de Socio
+$data["num_pedido"]           : Número de pedido de Socio
+$data["num_transaccion"]      : Número de transacción generado por Seguripago
+$data["fecha_hora_trans"]     : Fecha/hora de transacción en Unixtime
+$data["moneda"]               : Moneda
+$data["importe"]              : Importe aprobado
+$data["resultado"]            : Resultado de la transaccion. Aprobado (1), No aprobado (2)
+$data["cod_respuesta"]        : Código de respuesta, generado por el medio de pago
+$data["txt_respuesta"]        : Texto descriptivo de respuestas, generado por el medio de pago
+$data["medio_pago"]           : Código de Medio de pago utilizado para SeguriCrédito (si es Seguricash se envía cero (0)). (1) Visa, (2) Mastercard, (3) American Express
+$data["tipo_respuesta"]       : Tipo de respuestas: Inmediato (1), Batch (2)
+$data["cod_autoriza"]         : Código de autorización, enviado por algunos medios de pago
+$data["num_referencia"]       : Número de referencia, enviado por algunos medios e pago
+$data["hash"]                 : Resultado de la transaccion. Aprobado (1), No aprobado (2)
+$data["cod_producto"]         : Código del Producto de SeguriPago: (1) SeguriCrédito, (2) SeguriCash.
+$data["num_tarjeta"]          : Número de tarjeta de crédito asteriscada
+$data["nom_tarjetahabiente"]  : Nombre del tarjetahabiente
+$data["fecha_vencimiento"]    : Fecha de Vencimiento
+
+Método: confirmar()
+-------------------
+Envía una trama de confirmación por el método POST. Este método debe ser enviado
+una vez que termina de registrar en su base de datos, la información obtenida.
+Si no se envía la confirmación, SeguriPago intentará enviarle la información
+posteriormente y de forma periódica hasta que confirme la recepción.
+
+Este método no detiene, ni redirecciona la página, por lo que después de llamarlo
+puede continuar con mostrar el mensaje informativo al usuario.
+
+
+Método: $html = pantallaSeguricash($ruta_logo, $nombre_comercio, $completo=true)
+--------------------------------------------------------------
+Devuelve el $html del renderizado de la pantalla de SeguriCash. Es una pantalla
+estándar donde se muestran los métodos de pago diferido soportados por
+SeguriCash. Muestra también todos los datos necesarios para que el cliente
+pueda realizar el pago.
+
+$ruta_logo : Es la ruta (URL) ABSOLUTA de la imagen de su comercio.
+$nombre_comercio : Nombre del empresa/comercio que aparecerá en el renderizado
+             de la orden de compra.
+$completo  : Booleano que indica si se muestra en formato completo (con
+             explicación de cómo pagar) o simple (breve).
+
+
+
+
+
+
+================================================================================
+CLASE PARA RECEPCION DE DATOS DIFERIDOS
+---------------------------------------
+Clase: seguripagoRecepcionDiferido
+Descripción: Clase para recibir datos enviados por SeguriPago de manera diferida.
+  Se notifica cuando se recibe un pago diferido, como en BCP o Scotiabank.
+  También es utilizado para enviar la notificación de pago inmediato, cuando ésta
+  falló de la manera inmediata.
+================================================================================
+
+Constructor: seguripagoRecepcionDiferido($idSocio, $key, $modo)
+----------------------------------------------------------------
+$idSocio : Identificador del Socio, proporcionado por SeguriPago.
+$key     : Key del Socio, proporcionado por SeguriPago.
+$modo    : Indica si se está en modo 'test' o 'prod'. La clase direcciona
+           automáticamente al servidor de test o servidor de producción de SeguriPago.
+
+Método: $data = recibir()
+-------------------------
+Este método recibe los datos enviados por SeguriPago (recibe por el método POST).
+
+$data["idSocio"]              : Identificador de Socio
+$data["num_pedido"]           : Número de pedido de Socio
+$data["num_transaccion"]      : Número de transacción generado por Seguripago
+$data["fecha_hora_trans"]     : Fecha/hora de transacción en Unixtime
+$data["moneda"]               : Moneda
+$data["importe"]              : Importe aprobado
+$data["resultado"]            : Resultado de la transaccion. Aprobado (1), No aprobado (2)
+$data["cod_respuesta"]        : Código de respuesta, generado por el medio de pago
+$data["txt_respuesta"]        : Texto descriptivo de respuestas, generado por el medio de pago
+$data["medio_pago"]           : Código de Medio de pago utilizado para SeguriCrédito (si es Seguricash se envía cero (0)). (1) Visa, (2) Mastercard, (3) American Express
+$data["tipo_respuesta"]       : Tipo de respuestas: Inmediato (1), Batch (2)
+$data["cod_autoriza"]         : Código de autorización, enviado por algunos medios de pago
+$data["num_referencia"]       : Número de referencia, enviado por algunos medios e pago
+$data["hash"]                 : Resultado de la transaccion. Aprobado (1), No aprobado (2)
+$data["cod_producto"]         : Código del Producto de SeguriPago: (1) SeguriCrédito, (2) SeguriCash.
+$data["num_tarjeta"]          : Número de tarjeta de crédito asteriscada
+$data["nom_tarjetahabiente"]  : Nombre del tarjetahabiente
+
+Método: confirmar()
+-------------------
+Envía una trama de confirmación por la impresión de un echo. Este método debe
+ser enviado una vez que termina de registrar en su base de datos, la información
+obtenida. Si no se envía la confirmación, SeguriPago intentará enviarle la
+información posteriormente y de forma periódica hasta que confirme la recepción.
+
+Este método imprime el texto: "1" por lo que se pide no imprimir otro texto para
+no distorcionar el mensaje enviado a SeguriPago.
+
+
+
+
+
+================================================================================
+CLASE PARA GENERACIÓN DE HTML DE PANTALLAS DE SEGURIPAGO
+--------------------------------------------------------
+Clase: seguripagoPlantillas
+Descripción: Clase para generación de contenido en formato html de las pantallas
+  que se presentan a los usuarios.
+================================================================================
+
+Constructor: seguripagoPlantillas($idSocio, $key, $modo)
+----------------------------------------------------------------
+$idSocio : Identificador del Socio, proporcionado por SeguriPago.
+$key     : Key del Socio, proporcionado por SeguriPago.
+$modo    : Indica si se está en modo 'test' o 'prod'. La clase direcciona
+           automáticamente al servidor de test o servidor de producción de SeguriPago.
+
+Método: seguricashLocal($ruta_logo, $nombre_comercio, $completo, $num_transaccion, $importe, $moneda="PEN", $cod_producto=1)
+----------------------------------------------------------------------------------------------------------
+Devuelve el $html del renderizado de la pantalla de SeguriCash. Es una pantalla
+estándar donde se muestran los métodos de pago diferido soportados por
+SeguriCash. Muestra también todos los datos necesarios para que el cliente
+pueda realizar el pago.
+
+Se pide pasar como parámetro la información obtenida de su base de datos y que
+debe coincidir con la información que se recibió de SeguriPago.
+
+$ruta_logo       : Es la ruta (URL) ABSOLUTA de la imagen de su comercio.
+$nombre_comercio : El nombre de la empresa/comercio que aparecerá en la
+                   orden de pago.
+$completo        : Booleano que indica si se muestra en formato completo (con
+                   explicación de cómo pagar) o simple (breve).
+$num_transaccion : Número de transacción que le envió SeguriPago.
+$importe         : Importe que le envió SeguriPago.
+$moneda          : Moneda que le envió SeguriPago.
+$cod_producto    : Código de producto que le envió SeguriPago.
+
+
+
+
+
+
+
+

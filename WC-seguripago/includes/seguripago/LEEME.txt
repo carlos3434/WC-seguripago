@@ -1,0 +1,33 @@
+--------------------------------------------------------------------------------
+API DE SEGURIPAGO v1.1
+Creado por Seguripago, el año 2013
+
+Esta API permite simplificar la conexión entre el comercio y SeguriPago.
+Leer el manual para obtener mayor información.
+--------------------------------------------------------------------------------
+
+
+Características v1.1
+--------------------------------------------------------------------------------
+- Implementación de clase que permite generar contenido html para las pantallas
+  que se muestran a los usuarios: seguripagoPlantillas.
+  Inicialmente se ha creado la plantila de orden de pago de SeguriCash, para
+  ser utilizada por el comercio para mostrar al usuario o enviar por correo.
+
+
+Características v1.0
+--------------------------------------------------------------------------------
+- Implementación de clase para enviar datos de cobro a SeguriPago: 
+  seguripagoEnvio.
+  
+- Implementación de clase para recepcionar datos de operación de pago desde
+  SeguriPago, de forma inmediata: seguripagoRecepcionInmediato.
+
+- Implementación de clase para recepcionar datos de operación de pago desde
+  SeguriPago, de forma diferida: seguripagoRecepcionDiferido.
+
+- Se implementó la opción de trabajar en modo test, accediento al servidor de
+  test de SeguriPago.
+  
+  
+
